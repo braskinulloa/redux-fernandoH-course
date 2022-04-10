@@ -4,9 +4,10 @@ import { LoginComponent } from './auth/login/login.component';
 import { RegisterComponent } from './auth/register/register.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { dashboard_routes } from './dashboard/dashboard.routes';
+import { AuthGuard } from './services/auth.guard';
 
 const routes: Routes = [
-  { path: '', component: DashboardComponent, children: dashboard_routes },
+  { path: '', component: DashboardComponent, children: dashboard_routes, canActivate: [ AuthGuard ] },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: '**', redirectTo: '' }
