@@ -1,9 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FirebaseError } from '@angular/fire/app';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
 import { SweetAlert2LoaderService } from '@sweetalert2/ngx-sweetalert2';
+import { Subscription } from 'rxjs';
+import { AppState } from 'src/app/app.reducer';
 import { AuthService } from 'src/app/services/auth.service';
+import * as ui from 'src/app/shared/ui.actions';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -12,14 +16,17 @@ import Swal from 'sweetalert2';
   styles: [
   ]
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
 
   loginForm: FormGroup = new FormGroup({});
+  cargando: boolean = false;
+  uiSubscription?: Subscription;
 
   constructor(
     private fb: FormBuilder, 
     private auth: AuthService, 
-    private router: Router
+    private router: Router,
+    private store: Store<AppState>
     ) { }
 
   ngOnInit(): void {
@@ -27,23 +34,30 @@ export class LoginComponent implements OnInit {
       correo: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
     });
+    this.uiSubscription = this.store.select('ui').subscribe( ui => {
+      this.cargando = ui.isLoading;
+    });
   }
   loguearUsuario() {
     if (this.loginForm.valid) {
-      Swal.fire({
-        title: 'Cargando ...',
-        timerProgressBar: true,
-        didOpen: () => {
-          Swal.showLoading()
-        }
-      });
+      this.store.dispatch(ui.isLoading());
+      // Swal.fire({
+      //   title: 'Cargando ...',
+      //   timerProgressBar: true,
+      //   didOpen: () => {
+      //     Swal.showLoading()
+      //   }
+      // });
       const { correo, password } = this.loginForm.value
       this.auth.loguearUsuario(correo, password)
         .then( res => {
-          Swal.close();
+          // Swal.close();
+          this.store.dispatch(ui.stopLoading());
+
           this.router.navigate(['/']);
         })
         .catch( (err: FirebaseError) => {
+          this.store.dispatch(ui.stopLoading());
           Swal.fire({
             title: 'Error!',
             text: err.message,
@@ -53,5 +67,8 @@ export class LoginComponent implements OnInit {
           this.loginForm.reset();
         })
     }
+  }
+  ngOnDestroy(): void {
+    this.uiSubscription?.unsubscribe();
   }
 }

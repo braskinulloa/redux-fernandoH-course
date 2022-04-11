@@ -1,8 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FirebaseError } from '@angular/fire/app';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { Subscription } from 'rxjs';
+import { AppState } from 'src/app/app.reducer';
 import { AuthService } from 'src/app/services/auth.service';
+import * as ui from 'src/app/shared/ui.actions';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -11,11 +15,17 @@ import Swal from 'sweetalert2';
   styles: [
   ]
 })
-export class RegisterComponent implements OnInit {
+export class RegisterComponent implements OnInit, OnDestroy {
 
   registroForm: FormGroup = new FormGroup({});
+  uiSubscription?: Subscription;
+  cargando: boolean = false;
 
-  constructor(private fb: FormBuilder, private authService: AuthService, private router: Router) { }
+  constructor(
+    private fb: FormBuilder, 
+    private authService: AuthService, 
+    private router: Router,
+    private store: Store<AppState>) { }
 
   ngOnInit(): void {
     this.registroForm = this.fb.group({
@@ -23,23 +33,30 @@ export class RegisterComponent implements OnInit {
       correo: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]
     });
+    this.uiSubscription = this.store.select('ui').subscribe( ui => {
+      this.cargando = ui.isLoading;
+    });
   }
   crearUsuario(){
     if (this.registroForm.valid) {
-      Swal.fire({
-        title: 'Cargando ...',
-        timerProgressBar: true,
-        didOpen: () => {
-          Swal.showLoading()
-        }
-      });
+      this.store.dispatch(ui.isLoading());
+      // Swal.fire({
+      //   title: 'Cargando ...',
+      //   timerProgressBar: true,
+      //   didOpen: () => {
+      //     Swal.showLoading()
+      //   }
+      // });
       const { nombre, correo, password } = this.registroForm.value;
       this.authService.registrarUsuario(nombre, correo, password)
         .then( res => {
-          Swal.close();
+          // Swal.close();
+          this.store.dispatch(ui.stopLoading());
+
           this.router.navigate(['/']);
         })
         .catch( (err: FirebaseError) => {
+          this.store.dispatch(ui.stopLoading());
           Swal.fire({
             title: 'Error!',
             text: err.message,
@@ -49,5 +66,8 @@ export class RegisterComponent implements OnInit {
           this.registroForm.reset();
         });
     }
+  }
+  ngOnDestroy(): void {
+    this.uiSubscription?.unsubscribe();
   }
 }
