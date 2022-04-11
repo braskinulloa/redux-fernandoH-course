@@ -4,12 +4,15 @@ import { AngularFirestore } from '@angular/fire/compat/firestore';
 import { Store } from '@ngrx/store';
 import { map, Observable, take } from 'rxjs';
 import * as auth from '../auth/auth.actions';
+import { unSetItems } from '../ingreso-egreso/ingreso-egreso.actions';
 import { Usuario } from '../models/usuario.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
+
+  private _usuario?: Usuario;
 
   constructor(private auth: AngularFireAuth, private fireStore: AngularFirestore, private store: Store) { }
 
@@ -20,10 +23,14 @@ export class AuthService {
         this.fireStore.doc(`${fuser.uid}/usuario`).valueChanges().pipe(take(1)).subscribe( docuser => {
           const usuario: Usuario = docuser as Usuario;
           console.log('usuario ', usuario);
+          this._usuario = usuario;
           this.store.dispatch( auth.setUser({ usuario: usuario }));
         });
       } else {
+        this._usuario = undefined;
         this.store.dispatch( auth.unSetUser());
+        this.store.dispatch(unSetItems());
+
       } 
     });
   }
@@ -45,4 +52,9 @@ export class AuthService {
   isAuth(): Observable<boolean> {
     return this.auth.authState.pipe(map( fuser => fuser != null ));
   }
+  
+  public get usuario() : Usuario | undefined {
+    return this._usuario;
+  }
+  
 }

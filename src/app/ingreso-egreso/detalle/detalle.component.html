@@ -15,11 +15,15 @@
               </thead>
 
               <tbody>
-                <tr>
-                  <td>Descripción</td>
-                  <td>Monto</td>
-                  <td>Tipo</td>
-                  <td>acciones</td>
+                <tr *ngFor="let ie of ingresosEgresos">
+                  <td>{{ ie.descripcion }}</td>
+                  <td>{{ ie.monto | currency }}</td>
+                  <td [ngClass]="ie.tipo == 'ingreso' ? 'text-success' : 'text-danger'">{{ ie.tipo }}</td>
+                  <td>
+                    <button type="button" class="btn btn-danger btn-sm" (click)="borrar(ie.uid??'')">
+                      <i class="fa fa-trash"></i> Borrar
+                    </button>
+                  </td>
                 </tr>
               </tbody>
 
