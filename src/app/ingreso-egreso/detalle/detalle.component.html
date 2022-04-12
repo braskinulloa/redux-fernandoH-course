@@ -15,7 +15,7 @@
               </thead>
 
               <tbody>
-                <tr *ngFor="let ie of ingresosEgresos">
+                <tr *ngFor="let ie of ingresosEgresos | ordenIngreso">
                   <td>{{ ie.descripcion }}</td>
                   <td>{{ ie.monto | currency }}</td>
                   <td [ngClass]="ie.tipo == 'ingreso' ? 'text-success' : 'text-danger'">{{ ie.tipo }}</td>
